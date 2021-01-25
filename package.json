@@ -1,0 +1,23 @@
+{
+  "name": "datatables.net-buttons",
+  "version": "1.1.2-modified",
+  "description": "The Buttons extension for DataTables provides a common set of options, API methods and styling to display buttons on a page that will interact with a DataTable. Modules are also provided for data export, printing and column visibility control.",
+  "main": "js/dataTables.buttons.js",
+  "directories": {
+    "doc": "docs",
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plt-software/Buttons.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/plt-software/Buttons/issues"
+  },
+  "homepage": "https://github.com/plt-software/Buttons#readme"
+}
