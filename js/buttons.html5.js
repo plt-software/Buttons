@@ -318,7 +318,7 @@ var _sheetname = function ( config )
 		sheetName = config.sheetName.replace(/[\[\]\*\/\\\?\:]/g, '');
 	}
 
-	return sheetName;	
+	return sheetName;
 };
 
 /**
@@ -364,8 +364,13 @@ var _newLine = function ( config )
  */
 var _exportData = function ( dt, config )
 {
-	var newLine = _newLine( config );
 	var data = dt.buttons.exportData( config.exportOptions );
+	return _exportDataCustom( data, config );
+};
+
+var _exportDataCustom = function (data, config)
+{
+	var newLine = _newLine( config );
 	var boundary = config.fieldBoundary;
 	var separator = config.fieldSeparator;
 	var reBoundary = new RegExp( boundary, 'g' );
@@ -402,13 +407,13 @@ var _exportData = function ( dt, config )
 		str: header + body.join( newLine ) + footer,
 		rows: body.length
 	};
-};
+}
 
 /**
  * Safari's data: support for creating and downloading files is really poor, so
  * various options need to be disabled in it. See
  * https://bugs.webkit.org/show_bug.cgi?id=102914
- * 
+ *
  * @return {Boolean} `true` if Safari
  */
 var _isSafari = function ()
@@ -581,32 +586,13 @@ DataTable.ext.buttons.csvHtml5 = {
 	},
 
 	action: function ( e, dt, button, config ) {
-		// Set the text
-		var newLine = _newLine( config );
 		var output = _exportData( dt, config ).str;
-		var charset = config.charset;
+		csvExportAction(output, config);
+	},
 
-		if ( config.customize ) {
-			output = config.customize( output, config );
-		}
-
-		if ( charset !== false ) {
-			if ( ! charset ) {
-				charset = document.characterSet || document.charset;
-			}
-
-			if ( charset ) {
-				charset = ';charset='+charset;
-			}
-		}
-		else {
-			charset = '';
-		}
-
-		_saveAs(
-			new Blob( [output], {type: 'text/csv'+charset} ),
-			_filename( config )
-		);
+	customAction: function ( e, data, button, config ) {
+		var output = _exportDataCustom( data, config ).str;
+		csvExportAction(output, config);
 	},
 
 	filename: '*',
@@ -627,6 +613,34 @@ DataTable.ext.buttons.csvHtml5 = {
 
 	footer: false
 };
+
+function csvExportAction( output, config ) {
+	// Set the text
+	var newLine = _newLine( config );
+	var charset = config.charset;
+
+	if ( config.customize ) {
+		output = config.customize( output, config );
+	}
+
+	if ( charset !== false ) {
+		if ( ! charset ) {
+			charset = document.characterSet || document.charset;
+		}
+
+		if ( charset ) {
+			charset = ';charset='+charset;
+		}
+	}
+	else {
+		charset = '';
+	}
+
+	_saveAs(
+		new Blob( [output], {type: 'text/csv'+charset} ),
+		_filename( config )
+	);
+}
 
 //
 // Excel (xlsx) export
@@ -729,110 +743,12 @@ DataTable.ext.buttons.pdfHtml5 = {
 	},
 
 	action: function ( e, dt, button, config ) {
-		var newLine = _newLine( config );
 		var data = dt.buttons.exportData( config.exportOptions );
-		var rows = [];
+		pdfExportAction(data, config);
+	},
 
-		if ( config.header ) {
-			rows.push( $.map( data.header, function ( d ) {
-				return {
-					text: typeof d === 'string' ? d : d+'',
-					style: 'tableHeader'
-				};
-			} ) );
-		}
-
-		for ( var i=0, ien=data.body.length ; i<ien ; i++ ) {
-			rows.push( $.map( data.body[i], function ( d ) {
-				return {
-					text: typeof d === 'string' ? d : d+'',
-					style: i % 2 ? 'tableBodyEven' : 'tableBodyOdd'
-				};
-			} ) );
-		}
-
-		if ( config.footer ) {
-			rows.push( $.map( data.footer, function ( d ) {
-				return {
-					text: typeof d === 'string' ? d : d+'',
-					style: 'tableFooter'
-				};
-			} ) );
-		}
-
-		var doc = {
-			pageSize: config.pageSize,
-			pageOrientation: config.orientation,
-			content: [
-				{
-					table: {
-						headerRows: 1,
-						body: rows
-					},
-					layout: 'noBorders'
-				}
-			],
-			styles: {
-				tableHeader: {
-					bold: true,
-					fontSize: 11,
-					color: 'white',
-					fillColor: '#2d4154',
-					alignment: 'center'
-				},
-				tableBodyEven: {},
-				tableBodyOdd: {
-					fillColor: '#f3f3f3'
-				},
-				tableFooter: {
-					bold: true,
-					fontSize: 11,
-					color: 'white',
-					fillColor: '#2d4154'
-				},
-				title: {
-					alignment: 'center',
-					fontSize: 15
-				},
-				message: {}
-			},
-			defaultStyle: {
-				fontSize: 10
-			}
-		};
-
-		if ( config.message ) {
-			doc.content.unshift( {
-				text: config.message,
-				style: 'message',
-				margin: [ 0, 0, 0, 12 ]
-			} );
-		}
-
-		if ( config.title ) {
-			doc.content.unshift( {
-				text: _title( config, false ),
-				style: 'title',
-				margin: [ 0, 0, 0, 12 ]
-			} );
-		}
-
-		if ( config.customize ) {
-			config.customize( doc, config );
-		}
-
-		var pdf = window.pdfMake.createPdf( doc );
-
-		if ( config.download === 'open' && ! _isSafari() ) {
-			pdf.open();
-		}
-		else {
-			pdf.getBuffer( function (buffer) {
-				var blob = new Blob( [buffer], {type:'application/pdf'} );
-
-				_saveAs( blob, _filename( config ) );
-			} );
-		}
+	customAction: function ( e, data, button, config ) {
+		pdfExportAction(data, config);
 	},
 
 	title: '*',
@@ -858,6 +774,111 @@ DataTable.ext.buttons.pdfHtml5 = {
 	download: 'download'
 };
 
+function pdfExportAction (data, config) {
+	var newLine = _newLine( config );
+	var rows = [];
+
+	if ( config.header ) {
+		rows.push( $.map( data.header, function ( d ) {
+			return {
+				text: typeof d === 'string' ? d : d+'',
+				style: 'tableHeader'
+			};
+		} ) );
+	}
+
+	for ( var i=0, ien=data.body.length ; i<ien ; i++ ) {
+		rows.push( $.map( data.body[i], function ( d ) {
+			return {
+				text: typeof d === 'string' ? d : d+'',
+				style: i % 2 ? 'tableBodyEven' : 'tableBodyOdd'
+			};
+		} ) );
+	}
+
+	if ( config.footer ) {
+		rows.push( $.map( data.footer, function ( d ) {
+			return {
+				text: typeof d === 'string' ? d : d+'',
+				style: 'tableFooter'
+			};
+		} ) );
+	}
+
+	var doc = {
+		pageSize: config.pageSize,
+		pageOrientation: config.orientation,
+		content: [
+			{
+				table: {
+					headerRows: 1,
+					body: rows
+				},
+				layout: 'noBorders'
+			}
+		],
+		styles: {
+			tableHeader: {
+				bold: true,
+				fontSize: 11,
+				color: 'white',
+				fillColor: '#2d4154',
+				alignment: 'center'
+			},
+			tableBodyEven: {},
+			tableBodyOdd: {
+				fillColor: '#f3f3f3'
+			},
+			tableFooter: {
+				bold: true,
+				fontSize: 11,
+				color: 'white',
+				fillColor: '#2d4154'
+			},
+			title: {
+				alignment: 'center',
+				fontSize: 15
+			},
+			message: {}
+		},
+		defaultStyle: {
+			fontSize: 10
+		}
+	};
+
+	if ( config.message ) {
+		doc.content.unshift( {
+			text: config.message,
+			style: 'message',
+			margin: [ 0, 0, 0, 12 ]
+		} );
+	}
+
+	if ( config.title ) {
+		doc.content.unshift( {
+			text: _title( config, false ),
+			style: 'title',
+			margin: [ 0, 0, 0, 12 ]
+		} );
+	}
+
+	if ( config.customize ) {
+		config.customize( doc, config );
+	}
+
+	var pdf = window.pdfMake.createPdf( doc );
+
+	if ( config.download === 'open' && ! _isSafari() ) {
+		pdf.open();
+	}
+	else {
+		pdf.getBuffer( function (buffer) {
+			var blob = new Blob( [buffer], {type:'application/pdf'} );
+
+			_saveAs( blob, _filename( config ) );
+		} );
+	}
+}
 
 return DataTable.Buttons;
 }));

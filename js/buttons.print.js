@@ -76,75 +76,11 @@ DataTable.ext.buttons.print = {
 
 	action: function ( e, dt, button, config ) {
 		var data = dt.buttons.exportData( config.exportOptions );
-		var addRow = function ( d, tag ) {
-			var str = '<tr>';
+		printAction(data, config);
+	},
 
-			for ( var i=0, ien=d.length ; i<ien ; i++ ) {
-				str += '<'+tag+'>'+d[i]+'</'+tag+'>';
-			}
-
-			return str + '</tr>';
-		};
-
-		// Construct a table for printing
-		var html = '<table class="'+dt.table().node().className+'">';
-
-		if ( config.header ) {
-			html += '<thead>'+ addRow( data.header, 'th' ) +'</thead>';
-		}
-
-		html += '<tbody>';
-		for ( var i=0, ien=data.body.length ; i<ien ; i++ ) {
-			html += addRow( data.body[i], 'td' );
-		}
-		html += '</tbody>';
-
-		if ( config.footer ) {
-			html += '<tfoot>'+ addRow( data.footer, 'th' ) +'</tfoot>';
-		}
-
-		// Open a new window for the printable table
-		var win = window.open( '', '' );
-		var title = config.title;
-
-		if ( typeof title === 'function' ) {
-			title = title();
-		}
-
-		if ( title.indexOf( '*' ) !== -1 ) {
-			title= title.replace( '*', $('title').text() );
-		}
-
-		win.document.close();
-
-		// Inject the title and also a copy of the style and link tags from this
-		// document so the table can retain its base styling. Note that we have
-		// to use string manipulation as IE won't allow elements to be created
-		// in the host document and then appended to the new window.
-		var head = '<title>'+title+'</title>';
-		$('style, link').each( function () {
-			head += _relToAbs( this );
-		} );
-
-		$(win.document.head).html( head );
-
-		// Inject the table and other surrounding information
-		$(win.document.body).html(
-			'<h1>'+title+'</h1>'+
-			'<div>'+config.message+'</div>'+
-			html
-		);
-
-		if ( config.customize ) {
-			config.customize( win );
-		}
-
-		setTimeout( function () {
-			if ( config.autoPrint ) {
-				win.print(); // blocking - so close will not
-				win.close(); // execute until this is done
-			}
-		}, 250 );
+	customAction: function ( e, data, button, config ) {
+		printAction(data, config);
 	},
 
 	title: '*',
@@ -161,6 +97,78 @@ DataTable.ext.buttons.print = {
 
 	customize: null
 };
+
+function printAction (data, config) {
+	var addRow = function ( d, tag ) {
+		var str = '<tr>';
+
+		for ( var i=0, ien=d.length ; i<ien ; i++ ) {
+			str += '<'+tag+'>'+d[i]+'</'+tag+'>';
+		}
+
+		return str + '</tr>';
+	};
+
+	// Construct a table for printing
+	var html = '<table>';
+
+	if ( config.header ) {
+		html += '<thead>'+ addRow( data.header, 'th' ) +'</thead>';
+	}
+
+	html += '<tbody>';
+	for ( var i=0, ien=data.body.length ; i<ien ; i++ ) {
+		html += addRow( data.body[i], 'td' );
+	}
+	html += '</tbody>';
+
+	if ( config.footer ) {
+		html += '<tfoot>'+ addRow( data.footer, 'th' ) +'</tfoot>';
+	}
+
+	// Open a new window for the printable table
+	var win = window.open( '', '' );
+	var title = config.title;
+
+	if ( typeof title === 'function' ) {
+		title = title();
+	}
+
+	if ( title.indexOf( '*' ) !== -1 ) {
+		title= title.replace( '*', $('title').text() );
+	}
+
+	win.document.close();
+
+	// Inject the title and also a copy of the style and link tags from this
+	// document so the table can retain its base styling. Note that we have
+	// to use string manipulation as IE won't allow elements to be created
+	// in the host document and then appended to the new window.
+	var head = '<title>'+title+'</title>';
+	$('style, link').each( function () {
+		head += _relToAbs( this );
+	} );
+
+	$(win.document.head).html( head );
+
+	// Inject the table and other surrounding information
+	$(win.document.body).html(
+		'<h1>'+title+'</h1>'+
+		'<div>'+config.message+'</div>'+
+		html
+	);
+
+	if ( config.customize ) {
+		config.customize( win );
+	}
+
+	setTimeout( function () {
+		if ( config.autoPrint ) {
+			win.print(); // blocking - so close will not
+			win.close(); // execute until this is done
+		}
+	}, 250 );
+}
 
 
 return DataTable.Buttons;
