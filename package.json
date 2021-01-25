@@ -19,5 +19,18 @@
   "bugs": {
     "url": "https://github.com/plt-software/Buttons/issues"
   },
-  "homepage": "https://github.com/plt-software/Buttons#readme"
+  "homepage": "https://github.com/plt-software/Buttons#readme",
+  "bundleDependencies": false,
+  "dependencies": {
+    "datatables.net": ">=1.10.9",
+    "jquery": ">=1.7"
+  },
+  "deprecated": false,
+  "files": [
+    "js/dataTables.buttons.js",
+    "js/buttons.colVis.js",
+    "js/buttons.flash.js",
+    "js/buttons.html5.js",
+    "js/buttons.print.js"
+  ]
 }
